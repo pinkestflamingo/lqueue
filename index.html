@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://kit.fontawesome.com/de4851ac23.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <nav>
+        <p class="title">LQueue</p>
+    </nav>
+    <p style="font-size: 14px;" class="notice">This project is maintained by Pink Flamingo. <br> <span style="font-size: 12px;">Only for educational purposes.</span></p>
+    <div class="parent">
+        <div class="info-box">
+            <i class="fa-solid fa-cloud-sun fa-3x info-icon"></i>
+            <p class="info-lbl">+21°C</p>
+        </div>
+        <div class="info-box">
+            <i class="fa-solid fa-clock fa-3x info-icon"></i>
+            <p class="info-lbl">13-22</p>
+        </div>
+    </div>
+    <p>How many people are in queue?</p>
+    <div class="person-container">
+        <div class="person-box glow">
+            <i class="fa-solid fa-person" style="color: rgb(224, 224, 224);"></i>
+        </div>
+        <div class="person-box">
+            <i class="fa-solid fa-person" style="color: rgb(224, 224, 224);"></i>
+        </div>
+        <div class="person-box">
+            <i class="fa-solid fa-person" style="color: rgb(224, 224, 224);"></i>
+        </div>
+        <div class="person-box">
+            <i class="fa-solid fa-person" style="color: rgb(224, 224, 224);"></i>
+        </div>
+        <div class="person-box">
+            <i class="fa-solid fa-person" style="color: rgb(224, 224, 224);"></i>
+        </div>
+        <div class="person-box">
+            <i class="fa-solid fa-person" style="color: rgb(224, 224, 224);"></i>
+        </div>
+    </div>
+    <div class="custom-btn">
+        <p>Search</p>
+    </div>
+    <div class="attraction-holder">
+    </div>
+    <script>
+const t = Array.from(document.querySelectorAll(".person-box"));
+var e = 1;
+
+function n(t) {
+    const [e, n] = t.split(":").map(Number), a = new Date, i = a.getHours(), o = a.getMinutes(), r = new Date(a.getFullYear(), a.getMonth(), a.getDate(), i, o);
+    let s = new Date(a.getFullYear(), a.getMonth(), a.getDate(), e, n) - r;
+    s < 0 && (s += 864e5);
+    const l = Math.floor(s / 36e5),
+        c = Math.floor(s % 36e5 / 6e4);
+    return l < 1 ? `${c}min` : `${l}h ${c}min`
+}
+
+function a(t) {
+    const e = new Date(t),
+        n = new Date(e.getTime() + 72e5);
+    return `${String(n.getUTCHours()).padStart(2,"0")}:${String(n.getUTCMinutes()).padStart(2,"0")}:${String(n.getUTCSeconds()).padStart(2,"0")}`
+}
+t.forEach(((n, a) => {
+    n.onclick = function() {
+        e = a + 1;
+        for (let e = 0; e < t.length; e++) t[e].classList.remove("glow");
+        for (let e = 0; e < a + 1; e++) t[e].classList.add("glow");
+        console.log(e)
+    }
+})), $(".custom-btn").click((function() {
+    $(".attraction-holder").empty();
+    var t = {};
+    $.getJSON("https://www.liseberg.se/sv/api/app/attractions", (function(i) {
+        let o = [];
+        i.forEach((function(n) {
+            if (n.virtualQueueId) {
+                let i = $.getJSON("https://virtualqueue.liseberg.se/Queue/" + n.virtualQueueId).then((function(i) {
+                    i.estimatedTimes[e - 1] && (t[n.virtualQueueId] = {
+                        Time: a(i.estimatedTimes[e - 1].time),
+                        queueData: i,
+                        Data: n
+                    })
+                }));
+                o.push(i)
+            }
+        })), Promise.all(o).then((function() {
+            var e = Object.entries(t);
+
+            function a(t) {
+                var [e, n, a] = t.split(":").map(Number);
+                return e < 0 || e >= 24 || n < 0 || n >= 60 || a < 0 || a >= 60 ? 1 / 0 : new Date(1970, 0, 1, e, n, a).getTime()
+            }
+            e.sort((function(t, e) {
+                return a(t[1].Time) - a(e[1].Time)
+            })), Object.keys(e).forEach((function(t) {
+                let a = e[t][1],
+                    i = a.Time;
+                console.warn(e[t][0], i),
+                    function(t) {
+                        const e = new Date,
+                            [n, a, i] = t.split(":").map(Number),
+                            o = new Date;
+                        o.setHours(n), o.setMinutes(a), o.setSeconds(i);
+                        const r = e - o;
+                        return Math.floor(r / 1e3 / 60)
+                    }(i) >= 0 ? (i = '<p style="color: rgb(80, 189, 76);" id="time">Now!</p>', elementHTML = '\n<div class="attraction-box">\n<div style="display: flex; flex-direction: row;">\n<div>\n    <img class="attraction-img" src="' + a.Data.images.small + '" alt="">\n</div>\n<div class="attraction-info">\n    <p id="title">' + a.queueData.attractionName + '</p>\n    <p id="description">Physical queue: ' + a.Data.state.minWaitTime + "-" + a.Data.state.maxWaitTime + " min</p>\n    " + i + "\n</div>\n</div>\n</div>", $(".attraction-holder").append(elementHTML)) : (i = n(i), console.log(i, n(i)), i = '<p id="time">' + i + "</p>", elementHTML = '\n<div class="attraction-box">\n<div style="display: flex; flex-direction: row;">\n<div>\n    <img class="attraction-img" src="' + a.Data.images.small + '" alt="">\n</div>\n<div class="attraction-info">\n    <p id="title">' + a.queueData.attractionName + '</p>\n    <p id="description">Physical queue: ' + a.Data.state.minWaitTime + "-" + a.Data.state.maxWaitTime + " min</p>\n    " + i + "\n</div>\n</div>\n</div>", $(".attraction-holder").append(elementHTML))
+            }))
+        })).catch((function(t) {
+            console.error("Error occurred:", t)
+        }))
+    }))
+}));
+    </script>
+</body>
+</html>
